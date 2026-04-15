@@ -1,10 +1,10 @@
-# 智能机票推荐系统（AI增强版）
+# 机票推荐系统
 
-基于 Spring Boot 3.4 + AI 推荐模型 的机票推荐系统后端服务，支持航班搜索、比价、个性化推荐，并通过 AI 模型实现用户满意度评估与推荐优化闭环
+基于 Spring Boot 3.4 的机票推荐系统后端服务，为用户提供航班搜索、比价、个性化推荐、价格趋势、低价提醒等功能。已按 `DEVELOPMENT_PLAN.md` 完成全部 6 个 Sprint 开发。
 
 ## 项目概述
 
-机票推荐系统旨在帮助用户快速找到合适的航班，支持按出发地、目的地、日期、价格等条件筛选，并结合用户偏好进行智能推荐。
+机票推荐系统旨在帮助用户快速找到合适的航班，支持按出发地、目的地、日期、价格等条件筛选，并结合用户偏好进行智能推荐。并且在后端做一小ai模型来算推荐
 
 ## 技术栈
 
@@ -19,7 +19,7 @@
 - Spring Mail（邮件通知）
 
 ## 已实现功能
-
+、
 - [x] 航班搜索（出发地、目的地、日期、分页、排序、过滤）
 - [x] 航班比价与多维度排序（价格、时长、综合）
 - [x] 个性化推荐（热门、常搜航线、你可能喜欢）
@@ -29,15 +29,6 @@
 - [x] 热门航线排行
 - [x] API 文档（Swagger UI）
 - [x] 健康检查（Actuator）
-
-## AI模块设计（新增模块）
-1.在原有推荐逻辑基础上，引入AI模型（后端返回结果时候使用）：
-输入：用户历史搜索，点击行为，收藏/偏好
-输出：个性化航班推荐
-
-2.前端满意度评估助手：
-后端给前端返回接口，客人可以根据返回结果评估满不满意，如果不满意，接入一个LLM的API接口重新评估。
-
 
 ## API 接口总览
 
@@ -102,21 +93,103 @@ java -jar target/springboot-app-1.0.0-SNAPSHOT.jar
 
 ## 项目结构
 
-```
 src/main/java/com/example/app/
-├── SpringbootAppApplication.java   # 启动类（已完成）
-├── aspect/                         # AOP 切面（用户行为埋点）（已完成）
-├── common/                          # 通用组件（Result、异常处理）（已完成）
-├── config/                          # 配置（Security、Redis、缓存、OpenAPI）（已完成）
-├── controller/                      # 控制器（已完成）
-├── dto/                             # 数据传输对象（已完成）
-├── entity/                          # 实体类（已完成）
-├── mapper/                          # MyBatis Mapper（已完成）
-├── scheduler/                       # 定时任务（价格采集、提醒检查）（已完成）
-├── security/                        # 认证（AuthUser）（已完成）
-├── service/                         # 业务逻辑层（已完成）
+├── SpringbootAppApplication.java
+
+├── aspect/
+│   └── UserBehaviorAspect.java
+
+├── common/
+│   ├── GlobalExceptionHandler.java
+│   └── Result.java
+
+├── config/
+│   ├── AiConfig.java                  # ⭐ AI配置（API Key / Provider）
+│   ├── CacheConfig.java
+│   ├── OpenApiConfig.java
+│   ├── RedisCacheConfig.java
+│   ├── RedisConfig.java
+│   ├── SecurityConfig.java
+│   └── WebConfig.java
+
+├── controller/
+│   ├── AiController.java              # ⭐ AI接口（满意度反馈 / AI分析）
+│   ├── AuthController.java
+│   ├── FlightController.java
+│   ├── HealthController.java
+│   ├── PriceController.java
+│   ├── RecommendationController.java
+│   └── RouteController.java
+
+├── dto/
+│   ├── ai/                            # ⭐ AI相关DTO（单独分包，面试加分）
+│   │   ├── AiFeedbackRequest.java
+│   │   ├── AiFeedbackResponse.java
+│   │   ├── AiAnalysisResult.java
+│   │   └── AiRecommendRequest.java    # （可扩展）
+│   │
+│   ├── FlightSearchParams.java
+│   ├── FlightSearchRequest.java
+│   ├── FlightSearchResponse.java
+│   ├── FlightVO.java
+│   ├── LoginRequest.java
+│   ├── PageResult.java
+│   ├── PriceAlertRequest.java
+│   └── RegisterRequest.java
+
+├── entity/
+│   ├── Airline.java
+│   ├── Airport.java
+│   ├── Booking.java
+│   ├── Flight.java
+│   ├── FlightPrice.java
+│   ├── PriceAlert.java
+│   ├── Route.java
+│   ├── User.java
+│   ├── UserFlightHistory.java
+│   └── UserFeedback.java             # ⭐ 新增：用户反馈（满意/不满意）
+
+├── mapper/
+│   ├── AirlineMapper.java
+│   ├── AirportMapper.java
+│   ├── BookingMapper.java
+│   ├── FlightMapper.java
+│   ├── FlightPriceMapper.java
+│   ├── PriceAlertMapper.java
+│   ├── RouteMapper.java
+│   ├── UserFlightHistoryMapper.java
+│   ├── UserMapper.java
+│   └── UserFeedbackMapper.java       # ⭐ 新增
+
+├── scheduler/
+│   ├── PriceScheduler.java
+│   └── AiOptimizationScheduler.java  # ⭐ 可选：定期优化推荐策略
+
+├── security/
+│   └── AuthUser.java
+
+├── service/
+│   ├── ai/                           # ⭐ AI核心模块（重点）
+│   │   ├── AiService.java
+│   │   ├── AiServiceImpl.java
+│   │   ├── AiClient.java             # 调用AI（HTTP/OpenAI）
+│   │   ├── PromptBuilder.java        # Prompt构建（核心）
+│   │   └── AiResponseParser.java     # 解析AI返回
+│   │
+│   ├── AirportService.java
+│   ├── AuthService.java
+│   ├── FlightService.java
+│   ├── NotificationService.java
+│   ├── PriceAlertService.java
+│   ├── PriceTrendService.java
+│   ├── RecommendationService.java    # ⭐ 会调用AI做rerank
+│   ├── RouteService.java
+│   ├── UserBehaviorService.java
+│   ├── UserDetailsServiceImpl.java
+│   ├── UserService.java
+│   └── UserFeedbackService.java      # ⭐ 处理用户反馈
+
 └── ...
-```
 
 ## 配置说明
 
@@ -128,5 +201,8 @@ src/main/java/com/example/app/
 
 1. 对接真实航司或第三方航班数据 API
 2. 接入 MySQL/PostgreSQL 生产数据库
+3. 增强推荐算法（协同过滤、机器学习）
+4. 前端 Web 或移动端
+
 3. 增强推荐算法（协同过滤、机器学习）
 4. 前端 Web 或移动端
