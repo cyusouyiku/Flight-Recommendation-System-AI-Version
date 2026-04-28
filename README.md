@@ -31,7 +31,7 @@
 
 ### AI集成技术
 - **DeepSeek AI API** - 智能推荐与反馈分析
-- **OpenAI Java SDK** - AI服务客户端
+- **OpenAI Java SDK** - AI服务客户端服务
 - **Server-Sent Events (SSE)** - 实时流式对话
 - **Prompt工程** - 智能提示构建
 
